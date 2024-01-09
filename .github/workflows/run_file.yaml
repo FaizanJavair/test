@@ -1,0 +1,103 @@
+name: 'Run Test File'
+on: [push]
+jobs:
+    run-python:
+        runs-on:
+          - ubuntu-22.04
+        container: ubuntu:latest
+        env:
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          # catthehacker/ubuntu:act-latest
+          # apk add --no-cache nodejs
+        steps:
+            - name: Adding Node For Runner
+              run: |
+                apt update -y
+                apt upgrade -y
+                apt install sudo -y
+                sudo apt-get update
+                sudo apt-get install -y ca-certificates curl gnupg
+                sudo mkdir -p /etc/apt/keyrings
+                curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+                NODE_MAJOR=18
+                echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+                sudo apt-get update
+                
+                sudo apt-get install nodejs -y
+                  # curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+                  # export NVM_DIR="$HOME/.nvm"
+                  # [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+                  # [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion  
+                  # sudo mkdir -p /etc/apt/keyrings
+                  # NODE_MAJOR=20
+                  # echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+                  # sudo apt-get update
+                  # sudo apt-get install nodejs -y
+
+                  # nvm cache clear
+                  # nvm install node -y
+                sudo apt-get update
+                sudo apt-get dist-upgrade
+                node -v
+                npm -v
+                # apt-get install npm -y
+                apt install git -y
+                apt install make -y
+                apt install wget -y
+                
+                
+                # DEBIAN_FRONTEND=noninteractivek
+                                    
+            - name: Printing Hello World
+              run: |
+                echo Hello World                
+
+            - name: Setup Python
+              uses: actions/setup-python@v4
+              with:
+                python-version: 3.11.6
+
+            - name: Installing Python Dependencies 
+              run: |
+                apt update -y
+                apt upgrade -y
+                apt install python3.11-venv -y
+                apt install coreutils -y
+                apt install default-jre -y
+                wget -O /tmp/allure.deb https://github.com/allure-framework/allure2/releases/download/2.24.1/allure_2.24.1-1_all.deb
+                sudo dpkg -i /tmp/allure.deb
+                
+                                
+
+            - name: Cloning GitLab QA Repo
+              run: |
+                git clone https://${{ secrets.GITLAB_USERNAME}}:${{ secrets.GITLAB_TOKEN}}@gitlab.com/parkyeri/noapi-qa.git
+                cd noapi-qa
+                ls
+                python3 -m venv .venv
+                . .venv/bin/activate
+                .venv/bin/pip3 install -r requirements.txt
+                sudo npm install -g pnpm
+                pnpm install https://sdk.dev.no-api.net/latest.tgz
+                pnpm install
+                mkdir allure-results || true
+                make long
+                                
+            - name: Checkout
+              uses: actions/checkout@v2
+
+            # - name: Install Python 3
+            #   run: |
+            #     apt update -y
+            #     apt upgrade -y
+            #     apt install software-properties-common -y
+            #     add-apt-repository ppa:deadsnakes/ppa -y
+            #     apt install python3.11 -y
+            #     python3 --version
+
+            
+            - name: Run Python Script
+              run: |
+                python3 -m pip install no-api-sdk
+                python3 test.py                
